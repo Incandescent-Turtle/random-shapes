@@ -16,6 +16,8 @@ public class RandomShape extends JPanel
 	public RandomShape()
 	{
 		f = new JFrame();
+		f.setType(javax.swing.JFrame.Type.UTILITY);
+
 		f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		var dim = new Dimension(100, 100);
 		f.setPreferredSize(dim);
