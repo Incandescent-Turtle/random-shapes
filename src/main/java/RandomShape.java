@@ -2,19 +2,19 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import java.awt.*;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.util.Random;
 
-public class RandomShape extends JPanel
-{
+public class RandomShape extends JPanel {
 	private final Random rand = new Random();
 	private Area shape = randomShape(rand, 0, 0, 200, 200, 3, 100);
 	private final JFrame f;
 	private KeyboardHandler keyboardHandler;
 
-	public RandomShape()
-	{
+	public RandomShape() {
 		f = new JFrame();
 		f.setType(javax.swing.JFrame.Type.UTILITY);
 
@@ -26,11 +26,20 @@ public class RandomShape extends JPanel
 		f.setAlwaysOnTop(true);
 		setOpaque(false);
 		keyboardHandler = new KeyboardHandler(this);
+		f.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				super.mouseClicked(e);
 
+				if (centerShape().contains(e.getPoint())) {
+					toggleFrameTransparency();
+				}
+			}
+		});
 //
 //		InputMap im = getInputMap(JPanel.WHEN_IN_FOCUSED_WINDOW);
 //		ActionMap am = getActionMap();
-//
+//ggggg
 //		class Mover extends AbstractAction
 //		{
 //			int x, y;
@@ -67,78 +76,86 @@ public class RandomShape extends JPanel
 		f.setVisible(true);
 
 
-
 		new Thread(() -> {
 
-			try
-			{
-				while(true)
-				{
+			try {
+				while (true) {
 					var width = Math.min(getWidth(), getHeight());
 					shape = randomShape(rand, (getWidth() - width) / 2, 0, width, width, 3, 30);
 					repaint();
 					Thread.sleep(1000);
 				}
-			} catch(InterruptedException e)
-			{
+			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 		}).start();
 	}
 
-	public void keyPressed(int keyCode)
-	{
-		if(keyCode == KeyEvent.VK_H)
-		{
-			f.dispose();
-			if(f.isUndecorated())
-				f.setBackground(Color.WHITE);
-			f.setUndecorated(!f.isUndecorated());
-			if(f.isUndecorated())
-				f.setBackground(!f.isUndecorated() ? Color.WHITE : new Color(1.0f, 1.0f, 1.0f, 0.0f));
-			f.setVisible(true);
+	public void keyPressed(int keyCode) {
+		if (keyCode == KeyEvent.VK_H) {
+			toggleFrameTransparency();
 		}
 
-		if(keyboardHandler.isDown(KeyEvent.VK_G) || keyboardHandler.isDown(KeyEvent.VK_S))
-		{
+		if (keyboardHandler.isDown(KeyEvent.VK_G) || keyboardHandler.isDown(KeyEvent.VK_S)) {
 			var b = f.getBounds();
 			Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 			var left = b.x <= 30;
-			var right = screenSize.width-(b.x+b.width) <= 30;
+			var right = screenSize.width - (b.x + b.width) <= 30;
 			var top = b.y <= 30;
-			var bottom = screenSize.height-(b.y+b.height) <= 30;
+			var bottom = screenSize.height - (b.y + b.height) <= 30;
 
 			int dir = keyboardHandler.isDown(KeyEvent.VK_G) ? 1 : -1;
-			f.setSize(b.width+2*dir, b.height+2*dir);
+			f.setSize(b.width + 2 * dir, b.height + 2 * dir);
 			b = f.getBounds();
-			int x=b.x, y=b.y;
+			int x = b.x, y = b.y;
 
-			if(bottom && (left || right))
-				y = screenSize.height-b.height;
+			if (bottom && (left || right))
+				y = screenSize.height - b.height;
 
-			if(top && (left || right))
+			if (top && (left || right))
 				y = 0;
 
-			if(left && (top || bottom))
+			if (left && (top || bottom))
 				x = 0;
 
-			if(right && (top || bottom))
-				x = screenSize.width-b.width;
+			if (right && (top || bottom))
+				x = screenSize.width - b.width;
 
-			f.setLocation(new Point(x,y));
+			f.setLocation(new Point(x, y));
 		}
 
 		var loc = f.getLocation();
 
-		if(keyboardHandler.isDown(KeyEvent.VK_UP))
+		if (keyboardHandler.isDown(KeyEvent.VK_UP))
 			loc.translate(0, -4);
-		if(keyboardHandler.isDown(KeyEvent.VK_DOWN))
+		if (keyboardHandler.isDown(KeyEvent.VK_DOWN))
 			loc.translate(0, 4);
-		if(keyboardHandler.isDown(KeyEvent.VK_LEFT))
+		if (keyboardHandler.isDown(KeyEvent.VK_LEFT))
 			loc.translate(-4, 0);
-		if(keyboardHandler.isDown(KeyEvent.VK_RIGHT))
+		if (keyboardHandler.isDown(KeyEvent.VK_RIGHT))
 			loc.translate(4, 0);
 		f.setLocation(loc);
+	}
+
+	private Shape centerShape()
+	{
+		AffineTransform at = new AffineTransform();
+		var b = shape.getBounds();
+		at.translate(-b.x, -b.y);
+		at.translate((getWidth() - b.width) / 2, (getHeight() - b.height) / 2);
+		return at.createTransformedShape(shape);
+	}
+
+
+	private void toggleFrameTransparency()
+	{
+		f.dispose();
+		if(f.isUndecorated())
+			f.setBackground(Color.WHITE);
+		f.setUndecorated(!f.isUndecorated());
+		if(f.isUndecorated())
+			f.setBackground(!f.isUndecorated() ? Color.WHITE : new Color(1.0f, 1.0f, 1.0f, 0.0f));
+		f.setVisible(true);
 	}
 
 	@Override
@@ -147,12 +164,8 @@ public class RandomShape extends JPanel
 		super.paintComponent(gr);
 		Graphics2D g = (Graphics2D) gr;
 		var grad = new GradientPaint(0,0,randomColor(), getWidth(),0, randomColor());
-		AffineTransform at=new AffineTransform();
-		var b = shape.getBounds();
-		at.translate(-b.x, -b.y);
-		at.translate((getWidth() - b.width)/2, (getHeight()-b.height)/2);
 		g.setPaint(grad);
-		g.fill(at.createTransformedShape(shape));
+		g.fill(centerShape());
 	}
 
 	protected static Area randomShape(Random rand, int x, int y, int width, int height, int minPoints, int maxPoints)
