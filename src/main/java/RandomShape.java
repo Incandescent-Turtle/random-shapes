@@ -6,13 +6,16 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
+import java.awt.geom.GeneralPath;
 import java.util.Random;
 
 public class RandomShape extends JPanel {
 	private final Random rand = new Random();
-	private Area shape = randomShape(rand, 0, 0, 200, 200, 3, 100);
+	private Area shape = new Area(new Rectangle(0,0,0,0));
 	private final JFrame f;
 	private KeyboardHandler keyboardHandler;
+	private Color left, right;
+	private final static Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 
 	public RandomShape() {
 		f = new JFrame();
@@ -31,50 +34,15 @@ public class RandomShape extends JPanel {
 			public void mouseClicked(MouseEvent e) {
 				super.mouseClicked(e);
 
-				if (centerShape().contains(e.getPoint())) {
+				if (centerShape().contains(e.getPoint()))
+				{
 					toggleFrameTransparency();
 				}
 			}
 		});
-//
-//		InputMap im = getInputMap(JPanel.WHEN_IN_FOCUSED_WINDOW);
-//		ActionMap am = getActionMap();
-//ggggg
-//		class Mover extends AbstractAction
-//		{
-//			int x, y;
-//
-//			Mover(int x, int y)
-//			{
-//				this.x = x;
-//				this.y = y;
-//			}
-//
-//			@Override
-//			public void actionPerformed(ActionEvent e)
-//			{
-//				var loc = f.getLocation();
-//				loc.translate(x, y);
-//				f.setLocation(loc);
-//				System.out.println(x);
-//			}
-//		}
-//
-//		im.put(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0), "up");
-//		am.put("up", new Mover(0,-4));
-//
-//		im.put(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0), "down");
-//		am.put("down", new Mover(0,4));
-//
-//		im.put(KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, 0), "left");
-//		am.put("left", new Mover(-4,0));
-//
-//		im.put(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0), "right");
-//		am.put("right", new Mover(4,0));
 
 		f.add(this);
 		f.setVisible(true);
-
 
 		new Thread(() -> {
 
@@ -82,6 +50,8 @@ public class RandomShape extends JPanel {
 				while (true) {
 					var width = Math.min(getWidth(), getHeight());
 					shape = randomShape(rand, (getWidth() - width) / 2, 0, width, width, 3, 30);
+					left = randomColor();
+					right = randomColor();
 					repaint();
 					Thread.sleep(1000);
 				}
@@ -91,12 +61,15 @@ public class RandomShape extends JPanel {
 		}).start();
 	}
 
-	public void keyPressed(int keyCode) {
-		if (keyCode == KeyEvent.VK_H) {
+	public void keyPressed(int keyCode)
+	{
+		if (keyCode == KeyEvent.VK_H)
+		{
 			toggleFrameTransparency();
 		}
 
-		if (keyboardHandler.isDown(KeyEvent.VK_G) || keyboardHandler.isDown(KeyEvent.VK_S)) {
+		if (keyboardHandler.isDown(KeyEvent.VK_G) || keyboardHandler.isDown(KeyEvent.VK_S))
+		{
 			var b = f.getBounds();
 			Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 			var left = b.x <= 30;
@@ -134,7 +107,26 @@ public class RandomShape extends JPanel {
 			loc.translate(-4, 0);
 		if (keyboardHandler.isDown(KeyEvent.VK_RIGHT))
 			loc.translate(4, 0);
+
 		f.setLocation(loc);
+
+		if(keyboardHandler.isDown(KeyEvent.VK_SHIFT))
+		{
+			var b = f.getBounds();
+			Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+
+			int x = b.x, y = b.y;
+
+			if (keyboardHandler.isDown(KeyEvent.VK_DOWN))
+				y = screenSize.height - b.height;
+			if (keyboardHandler.isDown(KeyEvent.VK_UP))
+				y = 0;
+			if (keyboardHandler.isDown(KeyEvent.VK_LEFT))
+				x = 0;
+			if (keyboardHandler.isDown(KeyEvent.VK_RIGHT))
+				x = screenSize.width - b.width;
+			f.setLocation(new Point(x, y));
+		}
 	}
 
 	private Shape centerShape()
@@ -146,7 +138,6 @@ public class RandomShape extends JPanel {
 		return at.createTransformedShape(shape);
 	}
 
-
 	private void toggleFrameTransparency()
 	{
 		f.dispose();
@@ -154,7 +145,7 @@ public class RandomShape extends JPanel {
 			f.setBackground(Color.WHITE);
 		f.setUndecorated(!f.isUndecorated());
 		if(f.isUndecorated())
-			f.setBackground(!f.isUndecorated() ? Color.WHITE : new Color(1.0f, 1.0f, 1.0f, 0.0f));
+			f.setBackground(new Color(1.0f, 1.0f, 1.0f, 0.0f));
 		f.setVisible(true);
 	}
 
@@ -163,7 +154,7 @@ public class RandomShape extends JPanel {
 	{
 		super.paintComponent(gr);
 		Graphics2D g = (Graphics2D) gr;
-		var grad = new GradientPaint(0,0,randomColor(), getWidth(),0, randomColor());
+		var grad = new GradientPaint(0,0,left, getWidth(),0, right);
 		g.setPaint(grad);
 		g.fill(centerShape());
 	}
