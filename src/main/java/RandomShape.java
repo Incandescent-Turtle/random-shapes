@@ -8,6 +8,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.GeneralPath;
 import java.util.Random;
+import java.util.function.Supplier;
 
 public class RandomShape extends JPanel {
 	private final Random rand = new Random();
@@ -45,7 +46,6 @@ public class RandomShape extends JPanel {
 		f.setVisible(true);
 
 		new Thread(() -> {
-
 			try {
 				while (true) {
 					var width = Math.min(getWidth(), getHeight());
@@ -71,30 +71,9 @@ public class RandomShape extends JPanel {
 		if (keyboardHandler.isDown(KeyEvent.VK_G) || keyboardHandler.isDown(KeyEvent.VK_S))
 		{
 			var b = f.getBounds();
-			Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-			var left = b.x <= 30;
-			var right = screenSize.width - (b.x + b.width) <= 30;
-			var top = b.y <= 30;
-			var bottom = screenSize.height - (b.y + b.height) <= 30;
-
 			int dir = keyboardHandler.isDown(KeyEvent.VK_G) ? 1 : -1;
 			f.setSize(b.width + 2 * dir, b.height + 2 * dir);
-			b = f.getBounds();
-			int x = b.x, y = b.y;
-
-			if (bottom && (left || right))
-				y = screenSize.height - b.height;
-
-			if (top && (left || right))
-				y = 0;
-
-			if (left && (top || bottom))
-				x = 0;
-
-			if (right && (top || bottom))
-				x = screenSize.width - b.width;
-
-			f.setLocation(new Point(x, y));
+			snapToCorners();
 		}
 
 		var loc = f.getLocation();
@@ -113,8 +92,6 @@ public class RandomShape extends JPanel {
 		if(keyboardHandler.isDown(KeyEvent.VK_SHIFT))
 		{
 			var b = f.getBounds();
-			Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-
 			int x = b.x, y = b.y;
 
 			if (keyboardHandler.isDown(KeyEvent.VK_DOWN))
@@ -159,7 +136,7 @@ public class RandomShape extends JPanel {
 		g.fill(centerShape());
 	}
 
-	protected static Area randomShape(Random rand, int x, int y, int width, int height, int minPoints, int maxPoints)
+	private static Area randomShape(Random rand, int x, int y, int width, int height, int minPoints, int maxPoints)
 	{
 		Polygon shape = new Polygon();
 		int n = rand.nextInt(maxPoints - minPoints) + minPoints;
@@ -168,6 +145,31 @@ public class RandomShape extends JPanel {
 			shape.addPoint(rand.nextInt(width) + x, rand.nextInt(height) + y);
 		}
 		return new Area(shape);
+	}
+
+	private void snapToCorners()
+	{
+		var b = f.getBounds();
+		var left = b.x <= 30;
+		var right = screenSize.width - (b.x + b.width) <= 30;
+		var top = b.y <= 30;
+		var bottom = screenSize.height - (b.y + b.height) <= 30;
+
+		int x = b.x, y = b.y;
+
+		if (bottom && (left || right))
+			y = screenSize.height - b.height;
+
+		if (top && (left || right))
+			y = 0;
+
+		if (left && (top || bottom))
+			x = 0;
+
+		if (right && (top || bottom))
+			x = screenSize.width - b.width;
+
+		f.setLocation(new Point(x, y));
 	}
 
 	public Color randomColor()
